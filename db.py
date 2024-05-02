@@ -4,7 +4,7 @@ from collections import Counter
 #############DATABASE###################
 
 def startup_db_configurations():
-    conn = sqlite3.connect('settings.db')
+    conn = sqlite3.connect('./dbs/settings.db')
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS settings (
@@ -29,7 +29,7 @@ def startup_db_configurations():
     conn.close()
 
 def startup_processed_assets_db():
-    conn = sqlite3.connect('processed_assets.db')  # Separate database for processed assets
+    conn = sqlite3.connect('./dbs/processed_assets.db')  # Separate database for processed assets
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS processed_assets (
@@ -42,7 +42,7 @@ def startup_processed_assets_db():
     conn.close()
 
 def load_settings_from_db():
-    conn = sqlite3.connect('settings.db')
+    conn = sqlite3.connect('./dbs/settings.db')
     c = conn.cursor()
     c.execute("SELECT * FROM settings LIMIT 1")
     settings = c.fetchone()
@@ -50,7 +50,7 @@ def load_settings_from_db():
     return settings if settings else (None, None, None, None)
 
 def save_settings_to_db(immich_server_url, api_key, images_folder, timeout):
-    conn = sqlite3.connect('settings.db')
+    conn = sqlite3.connect('./dbs/settings.db')
     c = conn.cursor()
     # This simple logic assumes one row of settings; adjust according to your needs
     c.execute("DELETE FROM settings")  # Clear existing settings
@@ -59,7 +59,7 @@ def save_settings_to_db(immich_server_url, api_key, images_folder, timeout):
     conn.close()
 
 def saveAssetInfoToDb(asset_id, phash, asset_info):
-    conn = sqlite3.connect('processed_assets.db')
+    conn = sqlite3.connect('./dbs/processed_assets.db')
     c = conn.cursor()
     # Convert asset_info (a dict) to a string for storage; consider what info you need
     asset_info_str = json.dumps(asset_info)
@@ -69,7 +69,7 @@ def saveAssetInfoToDb(asset_id, phash, asset_info):
     conn.close()
 
 def isAssetProcessed(asset_id):
-    conn = sqlite3.connect('processed_assets.db')
+    conn = sqlite3.connect('./dbs/processed_assets.db')
     c = conn.cursor()
     c.execute("SELECT 1 FROM processed_assets WHERE asset_id = ?", (asset_id,))
     result = c.fetchone()
@@ -84,7 +84,7 @@ def bytes_to_megabytes(bytes_size):
     return f"{megabytes:.3f} MB"
 
 def countProcessedAssets():
-    conn = sqlite3.connect('processed_assets.db')
+    conn = sqlite3.connect('./dbs/processed_assets.db')
     c = conn.cursor()
     c.execute("SELECT COUNT(*) FROM processed_assets")
     count = c.fetchone()[0]
@@ -92,7 +92,7 @@ def countProcessedAssets():
     return count
 
 def getHashFromDb(asset_id):
-    conn = sqlite3.connect('processed_assets.db')
+    conn = sqlite3.connect('./dbs/processed_assets.db')
     c = conn.cursor()
     c.execute("SELECT phash FROM processed_assets WHERE asset_id = ?", (asset_id,))
     result = c.fetchone()
@@ -103,7 +103,7 @@ def getHashFromDb(asset_id):
         return None
     
 def countDuplicates():
-    conn = sqlite3.connect('processed_assets.db')
+    conn = sqlite3.connect('./dbs/processed_assets.db')
     c = conn.cursor()
     # Fetch all hashes from the database
     c.execute("SELECT phash FROM processed_assets")
@@ -121,7 +121,7 @@ def countDuplicates():
 ####################### FAISS #############################
 def startup_processed_duplicate_faiss_db():
     try:
-        conn = sqlite3.connect('duplicates.db')
+        conn = sqlite3.connect('./dbs/duplicates.db')
         cursor = conn.cursor()
         sql = '''CREATE TABLE IF NOT EXISTS duplicates(
            id INTEGER PRIMARY KEY,
@@ -139,7 +139,7 @@ def startup_processed_duplicate_faiss_db():
 def save_duplicate_pair(vector_id1, vector_id2, similarity):
     similarity = float(similarity)
     try:
-        conn = sqlite3.connect('duplicates.db')
+        conn = sqlite3.connect('./dbs/duplicates.db')
         cursor = conn.cursor()
 
         # Check if the pair already exists in either order
@@ -160,7 +160,7 @@ def save_duplicate_pair(vector_id1, vector_id2, similarity):
 
 def delete_duplicate_pair(asset_id_1, asset_id_2):
     try:
-        conn = sqlite3.connect('duplicates.db')
+        conn = sqlite3.connect('./dbs/duplicates.db')
         cursor = conn.cursor()
         # Delete the specific duplicate entry involving the two asset IDs
         cursor.execute("DELETE FROM duplicates WHERE (vector_id1 = ? AND vector_id2 = ?) OR (vector_id1 = ? AND vector_id2 = ?)", (asset_id_1, asset_id_2, asset_id_2, asset_id_1))
@@ -174,7 +174,7 @@ def delete_duplicate_pair(asset_id_1, asset_id_2):
 def load_duplicate_pairs(min_threshold, max_threshold):
     """Load duplicate pairs with a similarity between the specified minimum and maximum thresholds."""
     try:
-        conn = sqlite3.connect('duplicates.db')
+        conn = sqlite3.connect('./dbs/duplicates.db')
         cursor = conn.cursor()
         # Adjust the SQL query to filter duplicates within the specified range
         cursor.execute("""
@@ -195,7 +195,7 @@ def is_db_populated():
     """Check if the 'duplicates' table in the database has any entries."""
     conn = None
     try:
-        conn = sqlite3.connect('duplicates.db')
+        conn = sqlite3.connect('./dbs/duplicates.db')
         cursor = conn.cursor()
         # Check if there are any rows in the table
         cursor.execute("SELECT EXISTS(SELECT 1 FROM duplicates LIMIT 1)")
