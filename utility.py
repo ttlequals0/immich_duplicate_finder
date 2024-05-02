@@ -1,7 +1,7 @@
 from datetime import datetime
 import streamlit as st
 from datetime import datetime
-from api import deleteAsset, updateAsset
+from api import deleteAsset, updateAsset, moveAsset
 from db import delete_duplicate_pair
 
 def compare_and_color_data(value1, value2):
@@ -56,3 +56,19 @@ def display_asset_column(col, asset1_info, asset2_info, asset_id_1,asset_id_2, s
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
                 print(f"Failed to delete photo {asset_id_1}: {str(e)}")
+                
+        st.markdown(details, unsafe_allow_html=True)
+        move_button_key = f"Move-{asset_id_1}"
+        move_button_label = f"Move {asset_id_1}"
+        if st.button(move_button_label, key=move_button_key):
+            try:
+                if moveAsset(server_url, asset_id_1, api_key):
+                    st.success(f"Moved photo {asset_id_1}")
+                    st.session_state[f'moved_photo_{asset_id_1}'] = True
+                    st.session_state['show_faiss_duplicate'] = True
+                    st.session_state['generate_db_duplicate'] = False
+                else:
+                    st.error(f"Failed to move photo {asset_id_1}")
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
+                print(f"Failed to move photo {asset_id_1}: {str(e)}")

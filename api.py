@@ -13,6 +13,10 @@ def fetchAssets(immich_server_url, api_key, timeout, type):
         st.session_state['fetch_message'] = ""
     message_placeholder = st.empty()
 
+    # Get album ID or create it if it doesn't exist
+    global albumId
+    albumId = checkAlbumExists(immich_server_url, api_key)
+    
     # Initialize assets to None or an empty list, depending on your usage expectation
     assets = []
 
@@ -205,3 +209,90 @@ def getVideoAndSave(asset_id, immich_server_url,api_key,save_directory):
     else:
         print(f"Failed to retrieve video for asset_id {asset_id}. Status Code: {response.status_code}, Content-Type: {response.headers.get('Content-Type')}")
         return None
+    
+def moveAsset(immich_server_url, asset_id, api_key):
+    st.session_state['show_faiss_duplicate'] = False
+    url = f"{immich_server_url}/api/album/{albumId}/asset"
+    payload = json.dumps({
+        "ids": [asset_id]
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': api_key
+    }
+
+    try:
+        response = requests.put(url, headers=headers, data=payload)
+        if response.status_code == 201:
+            st.success(f"Successfully moved asset with ID: {asset_id}")
+            print(f"Successfully moved asset with ID: {asset_id}")
+            return True
+        else:
+            # Provide more detailed error feedback
+            error_message = response.json().get('message', 'No additional error message provided.')
+            st.error(f"Failed to move asset with ID: {asset_id}. Status code: {response.status_code}. Message: {error_message}")
+            print(f"Failed to move asset with ID: {asset_id}. Status code: {response.status_code}. Message: {error_message}")
+            return False
+    except requests.RequestException as e:
+        # Handle request-related exceptions
+        st.error(f"Request failed: {str(e)}")
+        print(f"Request failed: {str(e)}")
+        return False
+
+def createAlbum(immich_server_url, api_key):
+    st.session_state['show_faiss_duplicate'] = False
+    url = f"{immich_server_url}/api/album"
+    payload = json.dumps({
+        "albumName": "duplicates",
+        "description": "Created by Immich Duplicator Finder"
+        })
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': api_key
+    }
+
+    try:
+        response = requests.post(url, headers=headers, data=payload)
+        if response.status_code == 201:
+            album_id = response.json().get('id')
+            st.success(f"Successfully created album with ID: {album_id}")
+            print(f"Successfully created album with ID: {album_id}")
+            return album_id
+        else:
+            # Provide more detailed error feedback
+            error_message = response.json().get('message', 'No additional error message provided.')
+            st.error(f"Failed to create album. Status code: {response.status_code}. Message: {error_message}")
+            print(f"Failed to create album. Status code: {response.status_code}. Message: {error_message}")
+            return False
+    except requests.RequestException as e:
+        # Handle request-related exceptions
+        st.error(f"Request failed: {str(e)}")
+        print(f"Request failed: {str(e)}")
+        return False
+
+def checkAlbumExists(immich_server_url, api_key):
+    url = f"{immich_server_url}/api/album"
+    headers = {
+        'Accept': 'application/json',
+        'x-api-key': api_key
+    }
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            albums = response.json()
+            for album in albums:
+                if album['albumName'] == 'duplicates':
+                    st.success(f"Album exusts with ID: {album['id']}")
+                    print(f"Album exusts with ID: {album['id']}")
+                    return album['id']
+                else:
+                    st.error(f"Album doesn't exist, will create it")
+                    print(f"Album doesn't exist, will create it.")
+                    album_id = createAlbum(immich_server_url, api_key)
+                    return album_id
+    except requests.RequestException as e:
+        st.error(f"Request failed: {str(e)}")
+        print(f"Request failed: {str(e)}")
+        return False
+
+

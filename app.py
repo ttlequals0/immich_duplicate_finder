@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 
-from api import fetchAssets
+from api import fetchAssets, checkAlbumExists
 from db import startup_db_configurations, startup_processed_assets_db, startup_processed_duplicate_faiss_db
 from startup import startup_sidebar
 from imageDuplicate import generate_db_duplicate,show_duplicate_photos_faiss,calculateFaissIndex
@@ -29,6 +29,7 @@ def setup_session_state():
         'show_duplicates': False,
         'calculate_faiss': False,
         'generate_db_duplicate': False,
+        'create_album': False,
         'show_faiss_duplicate': False,
         'avoid_thumbnail_jpeg': True,
         'is_trashed': False,
@@ -53,8 +54,12 @@ def configure_sidebar():
             # Button to trigger the generation of the duplicates database
             if st.button('Create/Update duplicate DB'):
                 st.session_state['generate_db_duplicate'] = True
-
+                
+            # Button to create album
+            if st.button('Create Album'):
+                st.session_state['create_album'] = True
             st.markdown("---")
+            
             # Input for setting the minimum FAISS threshold
             st.session_state['faiss_min_threshold'] = st.number_input(
                 "Minimum Faiss threshold", min_value=0.0, max_value=10.0,
@@ -125,6 +130,9 @@ def main():
             immich_server_url,
             api_key
         )
-
+    # Create album if the corresponding flag is set
+    if st.session_state['create_album']:
+        checkAlbumExists(immich_server_url, api_key)
+        
 if __name__ == "__main__":
     main()
