@@ -211,7 +211,6 @@ def getVideoAndSave(asset_id, immich_server_url,api_key,save_directory):
         return None
     
 def moveAsset(immich_server_url, asset_id, api_key):
-    st.session_state['show_faiss_duplicate'] = False
     url = f"{immich_server_url}/api/album/{albumId}/asset"
     payload = json.dumps({
         "ids": [asset_id]
@@ -240,7 +239,6 @@ def moveAsset(immich_server_url, asset_id, api_key):
         return False
 
 def createAlbum(immich_server_url, api_key):
-    st.session_state['show_faiss_duplicate'] = False
     url = f"{immich_server_url}/api/album"
     payload = json.dumps({
         "albumName": "duplicates",
